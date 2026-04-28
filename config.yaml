@@ -1,0 +1,19 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Konfiguracja aplikacji do śledzenia detalicznych obligacji skarbowych
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Lista tickerów do śledzenia.
+# Format: PREFIX + YYMM lub MMYY (system automatycznie rozpoznaje format)
+# Przykłady: EDO0336, COI0526, ROD3305
+tickers:
+  - EDO0233
+
+# Dzień miesiąca i godzina automatycznego sprawdzania nowych danych (UTC)
+check_day: 1
+check_hour: 6
+
+# Timeout Playwright w ms
+scraper_timeout: 45000
+
+# Uruchom Playwright bez okna (zawsze true w Dockerze)
+headless: true
