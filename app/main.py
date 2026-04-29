@@ -76,7 +76,7 @@ def _calculate_prices(periods_data: list, purchase_date: date) -> list:
     Zwraca listę słowników: {date, price, interest, period, days_held}
     """
     result = []
-    cumulative_base = 100.0  # PLN – nominalna wartość 1 sztuki
+    base = 100.0  # PLN – nominalna wartość 1 sztuki
     seen_dates: set = set()
     running_day = 0
 
@@ -86,7 +86,7 @@ def _calculate_prices(periods_data: list, purchase_date: date) -> list:
         for day_offset, interest in entries:
             total_days = running_day + day_offset
             cal_date = purchase_date + timedelta(days=total_days)
-            price = round(cumulative_base + interest, 4)
+            price = round(base + interest, 4)
 
             if cal_date not in seen_dates:
                 seen_dates.add(cal_date)
@@ -155,11 +155,19 @@ def get_prices(
         prices = [p for p in prices if p["date"] <= dt.isoformat()]
 
     maturity = parse_ticker_maturity(ticker)
+    # maturity_date: ten sam dzień miesiąca co purchase_date, ale w miesiącu wykupu.
+    # Np. zakup 15-03-2026, wykup marzec 2036 → maturity_date = 15-03-2036.
+    maturity_date_str = None
+    if maturity:
+        import calendar as _cal
+        last_day = _cal.monthrange(maturity.year, maturity.month)[1]
+        day = min(pd.day, last_day)
+        maturity_date_str = date(maturity.year, maturity.month, day).isoformat()
 
     return {
         "ticker": ticker,
         "purchase_date": purchase_date,
-        "maturity_date": str(maturity) if maturity else None,
+        "maturity_date": maturity_date_str,
         "periods_available": len(periods_data),
         "data_points": len(prices),
         "prices": prices,

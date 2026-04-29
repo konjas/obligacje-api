@@ -123,7 +123,9 @@ async def scrape_ticker(
         maturity = parse_ticker_maturity(ticker)
         db.upsert_bond(ticker, product_label or product_value, str(maturity) if maturity else None)
 
-        # 5. Dla każdego nowego okresu: wybierz, pobierz PDF, parsuj
+        # 5. Dla każdego nowego okresu: wybierz, pobierz PDF, parsuj.
+        # Zatrzymujemy się przy pierwszym błędzie – wolimy mieć ciągłe dane
+        # bez dziur niż kompletne dane z luką w środku.
         for period_idx, period in enumerate(periods, start=1):
             label = period["text"]
             if label in existing:
@@ -135,12 +137,13 @@ async def scrape_ticker(
                 page, period, period_idx, ticker, data_dir, timeout
             )
             if not pdf_path:
-                continue
+                logger.error(f"  Nie udało się pobrać PDF dla '{label}' – przerywam dalsze pobieranie")
+                break
 
             parsed = parse_interest_pdf(str(pdf_path))
             if not parsed or not parsed.get("entries"):
-                logger.warning(f"  Nie udało się sparsować {pdf_path}")
-                continue
+                logger.error(f"  Nie udało się sparsować '{label}' – przerywam dalsze pobieranie")
+                break
 
             db.save_period_with_entries(
                 ticker=ticker,
